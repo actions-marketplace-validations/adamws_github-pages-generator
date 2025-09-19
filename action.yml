@@ -19,6 +19,9 @@ inputs:
   ignore_repositories:
     description: 'Comma separated list of repositories to ignore'
     required: false
+  ignore_archived:
+    description: 'Ignore archived repositories'
+    required: false
   skip_header:
     description: 'Skip website header generation'
     required: false

@@ -85,8 +85,13 @@ def get_projects_data(user):
     return projects
 
 
-def process_projects_data(projects, ignore_list):
-    projects = [x for x in projects if not x["fork"] if x["name"] not in ignore_list]
+def process_projects_data(projects, ignore_list, ignore_archived):
+    projects = [
+        x
+        for x in projects
+        if not x["fork"] and (not x["archived"] if ignore_archived else True)
+        if x["name"] not in ignore_list
+    ]
     projects = sorted(projects, key=lambda x: int(x["stargazers_count"]), reverse=True)
 
     for i, project in enumerate(projects):
@@ -179,6 +184,7 @@ def parse_action_arguments():
 
     output = os.environ.get("INPUT_OUTPUT_DIR", "./output")
     ignore = os.environ.get("INPUT_IGNORE_REPOSITORIES", None)
+    ignore_archived = os.environ.get("INPUT_IGNORE_ARCHIVED", False)
     skip_header = os.environ.get("INPUT_SKIP_HEADER", False)
     skip_footer = os.environ.get("INPUT_SKIP_FOOTER", False)
     data_only = os.environ.get("INPUT_DATA_ONLY", False)
@@ -188,6 +194,7 @@ def parse_action_arguments():
         colorscheme=colorscheme,
         output=output,
         ignore=ignore,
+        ignore_archived=ignore_archived,
         skip_header=skip_header,
         skip_footer=skip_footer,
         data_only=data_only,
@@ -210,6 +217,9 @@ def parse_cli():
     )
     parser.add_argument(
         "--ignore", type=str, help="Comma separated list of repositories to ignore"
+    )
+    parser.add_argument(
+        "--ignore-archived", action="store_true", help="Ignore archived repositories"
     )
     parser.add_argument("--skip-header", action="store_true", help="Turns off header")
     parser.add_argument("--skip-footer", action="store_true", help="Turns off footer")
@@ -234,6 +244,7 @@ if __name__ == "__main__":
     else:
         # nothing to ignore
         ignore = []
+    ignore_archived = args.ignore_archived
 
     header = not args.skip_header
     footer = not args.skip_footer
@@ -248,7 +259,7 @@ if __name__ == "__main__":
         get_avatar(user, output_directory)
 
     projects = get_projects_data(user)
-    projects = process_projects_data(projects, ignore)
+    projects = process_projects_data(projects, ignore, ignore_archived)
 
     if data_only:
         with open(output_directory / "repositories.json", "w") as f:
